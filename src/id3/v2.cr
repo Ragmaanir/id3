@@ -1,7 +1,7 @@
 require "./v2/header"
 require "./v2/frames"
 
-class Id3::V2
+module Id3::V2
   IDENTIFIER = "ID3"
 
   def self.read(r : Reader)
@@ -14,7 +14,9 @@ class Id3::V2
 
     body = r.read(remaining)
 
-    read_frames(Reader.new(body), header)
+    frames = read_frames(Reader.new(body), header)
+
+    Tag.new(header, frames)
   end
 
   def self.read_extended_header_size(r : Reader, header : Header)
@@ -111,4 +113,11 @@ class Id3::V2
   #     BasicFrame
   #   end
   # end
+  class Tag
+    getter header : Header
+    getter frames : Array(Frame)
+
+    def initialize(@header, @frames)
+    end
+  end
 end

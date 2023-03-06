@@ -1,4 +1,4 @@
-class Id3::V2
+module Id3::V2
   class Frame
     @[Flags]
     enum StatusFlags
@@ -19,9 +19,10 @@ class Id3::V2
     getter id : String
     getter raw_flags : Bytes?
     getter raw_content : Bytes
-    getter version : Header::Version
 
-    def initialize(@id, @raw_content, @raw_flags, @version)
+    def_equals_and_hash id, raw_flags, raw_content
+
+    def initialize(@id, @raw_content, @raw_flags, version : Header::Version)
       # @flags = FrameFlags.new(@flags, @major)
       # @raw_content_io = StringIO.new(@raw_content)
     end
@@ -71,7 +72,8 @@ class Id3::V2
       io << ", "
       io << raw_flags
       io << ", "
-      io << content
+      io << raw_content
+      # io << content
       io << ")"
     end
   end

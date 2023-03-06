@@ -1,4 +1,4 @@
-class Id3::V2
+module Id3::V2
   class Header
     SIZE = 10
 
