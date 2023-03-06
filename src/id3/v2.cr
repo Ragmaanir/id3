@@ -116,8 +116,25 @@ module Id3::V2
   class Tag
     getter header : Header
     getter frames : Array(Frame)
+    @by_id : Hash(String, Frame)
 
     def initialize(@header, @frames)
+      @by_id = frames.to_h { |f| {f.id, f} }
     end
+
+    SHORTCUTS = {
+      "TIT2" => :title,
+      "TPE1" => :artist,
+      "TALB" => :album,
+      "TRCK" => :track,
+      "TYER" => :year,
+      "TCON" => :genre,
+    }
+
+    {% for id, name in SHORTCUTS %}
+      def {{name.id}}
+        @by_id[{{id}}]?.try(&.content)
+      end
+    {% end %}
   end
 end

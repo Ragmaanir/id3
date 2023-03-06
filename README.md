@@ -1,6 +1,6 @@
 # id3
 
-TODO: Write a description here
+ID3 reader library written in pure crystal.
 
 ## Installation
 
@@ -19,12 +19,6 @@ TODO: Write a description here
 ```crystal
 require "id3"
 ```
-
-TODO: Write usage instructions here
-
-## Development
-
-TODO: Write development instructions here
 
 ## Contributing
 

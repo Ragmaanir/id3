@@ -1,8 +1,18 @@
 TODO
 ----
 
-- 🟢 Read v2 header
-- 🟢 Read v2 text frames
+- 🟣 V2
+  - 🟢 Read header
+  - 🟢 Read text frames
+  - 🟡 Unicode
+    - 🟡 Unicode strings must begin with the Unicode BOM
+    - 🟡 Terminated strings are terminated with $00 00 if encoded as unicode
+    - 🟡 Any empty Unicode strings which are NULL-terminated may have the Unicode BOM followed by a Unicode NULL
+  - 🟡 Frames that allow different types of text encoding have a text encoding description byte directly after the frame size
+  - 🟡 Read common frames
+    - 🟡 TCON with special encoding of id3v1 genres etc
+- 🟣 V2
+  - 🟡 Read title/artist etc
 
 - 🧠
   - https://web.archive.org/web/20161022105303/http://id3.org/id3v2-chapters-1.0
