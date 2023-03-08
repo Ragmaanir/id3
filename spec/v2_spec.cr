@@ -24,17 +24,16 @@ describe Id3::V2 do
     assert tag.frames.size == 7
 
     v = tag.header.version
-    sf = Frame::StatusFlags::None
-    ff = Frame::FormatFlags::None
+    flags = Frame::NewFlags.new(:none, :none)
 
     frames = [
-      TextFrame.new("TIT2", v, sf, ff, :ISO8859_1, "The Title Of This Dummy File"),
-      TextFrame.new("TPE1", v, sf, ff, :ISO8859_1, "Another Artist"),
-      TextFrame.new("TALB", v, sf, ff, :ISO8859_1, "Trees in the Forest"),
-      Frame.new("COMM", v, sf, ff, "\u0000eng\u0000The Comment".to_slice),
-      TextFrame.new("TRCK", v, sf, ff, :ISO8859_1, "1"),
-      TextFrame.new("TYER", v, sf, ff, :ISO8859_1, "2023"),
-      TextFrame.new("TCON", v, sf, ff, :ISO8859_1, "Black Metal"),
+      TextFrame.new("TIT2", v, flags, :ISO8859_1, "The Title Of This Dummy File"),
+      TextFrame.new("TPE1", v, flags, :ISO8859_1, "Another Artist"),
+      TextFrame.new("TALB", v, flags, :ISO8859_1, "Trees in the Forest"),
+      Frame.new("COMM", v, flags, "\u0000eng\u0000The Comment".to_slice),
+      TextFrame.new("TRCK", v, flags, :ISO8859_1, "1"),
+      TextFrame.new("TYER", v, flags, :ISO8859_1, "2023"),
+      TextFrame.new("TCON", v, flags, :ISO8859_1, "Black Metal"),
     ]
 
     assert tag.frames == frames

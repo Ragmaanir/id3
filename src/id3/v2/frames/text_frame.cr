@@ -14,19 +14,19 @@ module Id3::V2
     getter encoding : Encoding
     getter content : String
 
-    def_equals_and_hash id, status_flags, format_flags, body, encoding, content
+    def_equals_and_hash id, flags, body, encoding, content
 
-    def initialize(id, version, status_flags, format_flags, @encoding, @content)
+    def initialize(id, version, flags, @encoding, @content)
       io = IO::Memory.new
 
       io.write_byte(encoding.value)
 
       io.write(content.to_slice)
 
-      super(id, version, status_flags, format_flags, io.to_slice)
+      super(id, version, flags, io.to_slice)
     end
 
-    def initialize(id, version, status_flags, format_flags, body)
+    def initialize(id, version, flags, body)
       @encoding = Encoding.from_value(body[0])
 
       string = String.new(body[1..-1], @encoding.to_s)
@@ -37,7 +37,7 @@ module Id3::V2
                    string.split('\0', 2).first
                  end
 
-      super(id, version, status_flags, format_flags, body)
+      super(id, version, flags, body)
     end
 
     # def inspect(io)

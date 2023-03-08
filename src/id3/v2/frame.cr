@@ -41,37 +41,44 @@ module Id3::V2
              else raise("Invalid major version: #{major}")
              end
 
-      # TODO: move to flags-object?
-      sf = nil
-      ff = nil
+      flags = nil
 
       if major > 2 # has flags
         flag_bytes = r.read(2)
-        sfv, ffv = flag_bytes[0].to_i, flag_bytes[1].to_i
 
-        if major == 2
-          sf = OldStatusFlags.from_value(sfv)
-          ff = OldFormatFlags.from_value(ffv)
-        else
-          sf = StatusFlags.from_value(sfv)
-          ff = FormatFlags.from_value(ffv)
-        end
+        e = major == 2 ? OldFlags : NewFlags
+
+        flags = e.new(flag_bytes[0], flag_bytes[1])
       end
 
       body = r.read(size)
 
-      Frame.from_id(id).new(id, version, sf, ff, body)
+      Frame.from_id(id).new(id, version, flags, body)
+    end
+
+    record(NewFlags, status : StatusFlags, format : FormatFlags) do
+      def initialize(s : UInt8, f : UInt8)
+        @status = StatusFlags.from_value(s)
+        @format = FormatFlags.from_value(f)
+      end
+    end
+
+    record(OldFlags, status : OldStatusFlags, format : OldFormatFlags) do
+      def initialize(s : UInt8, f : UInt8)
+        @status = OldStatusFlags.from_value(s)
+        @format = OldFormatFlags.from_value(f)
+      end
     end
 
     @[Flags]
-    enum StatusFlags
+    enum StatusFlags : UInt8
       DiscardOnTagAlt  = 0b0100_0000
       DiscardOnFileAlt = 0b0010_0000
       Readonly         = 0b0001_0000
     end
 
     @[Flags]
-    enum FormatFlags
+    enum FormatFlags : UInt8
       Grouped             = 0b0100_0000
       Compressed          = 0b0000_1000
       Encrypted           = 0b0000_0100
@@ -80,14 +87,14 @@ module Id3::V2
     end
 
     @[Flags]
-    enum OldStatusFlags
+    enum OldStatusFlags : UInt8
       DiscardOnTagAlt  = 0b0100_0000
       DiscardOnFileAlt = 0b0010_0000
       Readonly         = 0b0001_0000
     end
 
     @[Flags]
-    enum OldFormatFlags
+    enum OldFormatFlags : UInt8
       Grouped             = 0b0100_0000
       Compressed          = 0b0000_1000
       Encrypted           = 0b0000_0100
@@ -96,8 +103,7 @@ module Id3::V2
     end
 
     getter id : String
-    getter status_flags : StatusFlags | OldStatusFlags | Nil
-    getter format_flags : FormatFlags | OldFormatFlags | Nil
+    getter flags : NewFlags | OldFlags | Nil
     getter extra_flag_bytes : Int32
     getter body : Bytes
 
@@ -105,25 +111,25 @@ module Id3::V2
     getter group : UInt8?
     getter compression_size : Int32?
 
-    def_equals_and_hash id, status_flags, format_flags, body
+    def_equals_and_hash id, flags, body
 
-    def initialize(@id, version : Version, @status_flags, @format_flags, @body)
+    def initialize(@id, version : Version, @flags, @body)
       @extra_flag_bytes = 0
 
-      if ff = @format_flags
+      if f = @flags
         efb = 0
 
-        if ff.grouped?
+        if f.format.grouped?
           @encryption = @body[efb]
           efb += 1
         end
 
-        if ff.compressed?
+        if f.format.compressed?
           @compression_size = IO::ByteFormat::BigEndian.decode(Int32, @body[efb..efb + 4])
           efb += 4
         end
 
-        if ff.encrypted?
+        if f.format.encrypted?
           @encryption = @body[efb]
           efb += 1
         end
