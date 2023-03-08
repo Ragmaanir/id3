@@ -20,7 +20,7 @@ module Id3::V2
 
     @[Flags]
     enum Flags
-      Unsynchronisation = 0b1000_0000
+      Unsynchronization = 0b1000_0000
       ExtendedHeader    = 0b0100_0000
       Experimental      = 0b0010_0000
       Footer            = 0b0001_0000

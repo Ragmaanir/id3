@@ -62,10 +62,10 @@ module Id3::V2
 
     @[Flags]
     enum FormatFlags
-      Group               = 0b0100_0000
+      Grouped             = 0b0100_0000
       Compressed          = 0b0000_1000
       Encrypted           = 0b0000_0100
-      Unsynchronised      = 0b0000_0010
+      Unsynchronized      = 0b0000_0010
       DataLengthIndicator = 0b0000_0001
     end
 
@@ -78,62 +78,112 @@ module Id3::V2
 
     @[Flags]
     enum OldFormatFlags
-      Group               = 0b0100_0000
+      Grouped             = 0b0100_0000
       Compressed          = 0b0000_1000
       Encrypted           = 0b0000_0100
-      Unsynchronised      = 0b0000_0010
+      Unsynchronized      = 0b0000_0010
       DataLengthIndicator = 0b0000_0001
     end
 
     getter id : String
-    getter! format_flags : FormatFlags | OldFormatFlags
-    getter! status_flags : StatusFlags | OldStatusFlags
+    getter format_flags : FormatFlags | OldFormatFlags | Nil
+    getter status_flags : StatusFlags | OldStatusFlags | Nil
     getter raw_flags : Bytes?
-    getter raw_content : Bytes
+    getter extra_flag_bytes : Int32
+    getter body : Bytes
 
-    def_equals_and_hash id, raw_flags, raw_content
+    getter encryption : UInt8?
+    getter group : UInt8?
+    getter compression_size : Int32?
 
-    def initialize(@id, version : Version, @raw_flags, @raw_content)
+    def_equals_and_hash id, raw_flags, body
+
+    def initialize(@id, version : Version, @raw_flags, @body)
+      @extra_flag_bytes = 0
+
       if rf = @raw_flags
         if version.major == 2
-          @format_flags = OldFormatFlags.from_value(rf[0].to_i)
-          @status_flags = OldStatusFlags.from_value(rf[1].to_i)
+          ff = OldFormatFlags.from_value(rf[0].to_i)
+          sf = OldStatusFlags.from_value(rf[1].to_i)
         else
-          @format_flags = FormatFlags.from_value(rf[0].to_i)
-          @status_flags = StatusFlags.from_value(rf[1].to_i)
+          ff = FormatFlags.from_value(rf[0].to_i)
+          sf = StatusFlags.from_value(rf[1].to_i)
         end
+
+        @format_flags = ff
+        @status_flags = sf
+
+        efb = 0
+
+        if ff.grouped?
+          @encryption = @body[efb]
+          efb += 1
+        end
+
+        if ff.compressed?
+          @compression_size = IO::ByteFormat::BigEndian.decode(Int32, @body[efb..efb + 4])
+          efb += 4
+        end
+
+        if ff.encrypted?
+          @encryption = @body[efb]
+          efb += 1
+        end
+
+        @extra_flag_bytes = efb
       end
-      # @raw_content_io = StringIO.new(@raw_content)
+
+      # TODO: decompression/decryption
+      # TODO: lazy decompression etc?
+
+      # decoded_content = if format_flags.unsynchronized?
+      #                     UnsynchronizationScheme.unapply(@body[@extra_flag_bytes..-1])
+      #                   else
+      #                     body
+      #                   end
+
+      # @content = String.new(decoded_content)
     end
 
-    def content
-      # raw_content_io.seek(flags.additional_info_byte_count)
-      # if flags.unsynchronised?
-      #   StringUtil.undo_unsynchronization(raw_content_io.read)
-      # else
-      #   raw_content_io.read
-      # end
-      ""
-    end
+    # def extra_bytes
+    #   if f = @format_flags
+    #     bytes = 0
 
-    def group_id
-      if flags.grouped?
-        read_additional_info_byte(*flags.position_and_count_of_group_id_bytes)
-      end
-    end
+    #     f.each do |flag|
+    #       bytes += case flag
+    #                in .grouped?    then 1
+    #                in .compressed? then 4
+    #                in .encryped?   then 1
+    #                end
+    #     end
 
-    def encryption_id
-      if flags.encrypted?
-        read_additional_info_byte(*flags.position_and_count_of_encryption_id_bytes)
-      end
-    end
+    #     bytes
+    #   else
+    #     0
+    #   end
+    # end
 
-    def read_additional_info_byte(position, byte_count)
-      if position && byte_count
-        raw_content_io.seek(position)
-        raw_content_io.read(byte_count).unpack("C").first
-      end
-    end
+    # def content
+    #   # raw_content_io.seek(flags.additional_info_byte_count)
+    #   # if flags.unsynchronised?
+    #   #   StringUtil.undo_unsynchronization(raw_content_io.read)
+    #   # else
+    #   #   raw_content_io.read
+    #   # end
+    #   ""
+    # end
+
+    # def group_id
+    #   if flags.grouped?
+    #     read_additional_info_byte(*flags.position_and_count_of_group_id_bytes)
+    #   end
+    # end
+
+    # def encryption_id
+    #   if flags.encrypted?
+    #     read_additional_info_byte(*flags.position_and_count_of_encryption_id_bytes)
+    #   end
+    # end
 
     # def final_size
     #   pos, count = flags.position_and_count_of_data_length_bytes

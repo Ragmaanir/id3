@@ -34,7 +34,7 @@ module Id3
     {% end %}
   end
 
-  # ID3 'unsynchronisation scheme'
+  # ID3 'unsynchronization scheme'
   # Bit sequences like:
   #
   #   `11111111 111xxxxx`

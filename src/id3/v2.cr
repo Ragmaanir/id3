@@ -65,7 +65,7 @@ module Id3::V2
 
     {% for id, name in SHORTCUTS %}
       def {{name.id}}
-        @by_id[{{id}}]?.try(&.content)
+        @by_id[{{id}}]?.try(&.as(TextFrame).content)
       end
     {% end %}
   end

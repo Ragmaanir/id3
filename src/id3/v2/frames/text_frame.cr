@@ -14,20 +14,14 @@ module Id3::V2
     getter encoding : Encoding
     getter content : String
 
-    def_equals_and_hash id, raw_flags, raw_content, encoding, content
+    def_equals_and_hash id, raw_flags, body, encoding, content
 
     def initialize(id, version, raw_flags, @encoding, @content)
       io = IO::Memory.new
 
       io.write_byte(encoding.value)
 
-      # content.join(io, '\0') do |str, io|
-      #   io.write(str.to_slice)
-      # end
-
       io.write(content.to_slice)
-
-      # @raw_content = io.to_slice
 
       super(id, version, raw_flags, io.to_slice)
     end
