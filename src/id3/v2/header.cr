@@ -26,21 +26,21 @@ module Id3::V2
       Footer            = 0b0001_0000
     end
 
-    record(Version, major : UInt8, minor : UInt8)
-
     getter version : Version
     getter flags : Flags
     getter tag_size : Int32
 
+    def_equals_and_hash version, flags, tag_size
+
     def initialize(@version, @flags, @tag_size)
     end
 
-    def to_s(io)
-      io << version
-      io << " "
-      flags.inspect(io)
-      io << " "
-      io << tag_size
-    end
+    # def to_s(io)
+    #   io << version
+    #   io << " "
+    #   flags.inspect(io)
+    #   io << " "
+    #   io << tag_size
+    # end
   end
 end

@@ -13,10 +13,7 @@ class Id3::Reader < IO
     initialize(IO::Memory.new(bytes, false), bytes.size)
   end
 
-  # def read(slice : Bytes)
-  # end
-
-  delegate read, seek, peek, to: @io
+  delegate read, read_string, seek, peek, to: @io
 
   def write(slice : Bytes) : Nil
     raise "readonly"
@@ -39,5 +36,19 @@ class Id3::Reader < IO
     else
       bytes[0]
     end
+  end
+
+  def peek(n : Int32) : Bytes
+    old = @io.pos
+    bytes = read(n)
+    @io.seek(pos)
+    bytes
+  end
+
+  def peek_string(n : Int32) : String
+    old = @io.pos
+    str = read_string(n)
+    @io.seek(old)
+    str
   end
 end
