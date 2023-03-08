@@ -14,22 +14,22 @@ module Id3::V2
     getter encoding : Encoding
     getter content : String
 
-    def_equals_and_hash id, raw_flags, body, encoding, content
+    def_equals_and_hash id, status_flags, format_flags, body, encoding, content
 
-    def initialize(id, version, raw_flags, @encoding, @content)
+    def initialize(id, version, status_flags, format_flags, @encoding, @content)
       io = IO::Memory.new
 
       io.write_byte(encoding.value)
 
       io.write(content.to_slice)
 
-      super(id, version, raw_flags, io.to_slice)
+      super(id, version, status_flags, format_flags, io.to_slice)
     end
 
-    def initialize(id, version, raw_flags, raw_content)
-      @encoding = Encoding.from_value(raw_content[0])
+    def initialize(id, version, status_flags, format_flags, body)
+      @encoding = Encoding.from_value(body[0])
 
-      string = String.new(raw_content[1..-1], @encoding.to_s)
+      string = String.new(body[1..-1], @encoding.to_s)
 
       @content = if version.major >= 4
                    string.chomp('\0')
@@ -37,7 +37,7 @@ module Id3::V2
                    string.split('\0', 2).first
                  end
 
-      super(id, version, raw_flags, raw_content)
+      super(id, version, status_flags, format_flags, body)
     end
 
     # def inspect(io)

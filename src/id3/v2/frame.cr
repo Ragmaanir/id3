@@ -41,16 +41,26 @@ module Id3::V2
              else raise("Invalid major version: #{major}")
              end
 
-      has_flags = major > 2
-      flags = has_flags ? r.read(2) : nil
-      content = r.read(size)
+      # TODO: move to flags-object?
+      sf = nil
+      ff = nil
 
-      Frame.from_id(id).new(
-        id,
-        version,
-        flags,
-        content
-      )
+      if major > 2 # has flags
+        flag_bytes = r.read(2)
+        sfv, ffv = flag_bytes[0].to_i, flag_bytes[1].to_i
+
+        if major == 2
+          sf = OldStatusFlags.from_value(sfv)
+          ff = OldFormatFlags.from_value(ffv)
+        else
+          sf = StatusFlags.from_value(sfv)
+          ff = FormatFlags.from_value(ffv)
+        end
+      end
+
+      body = r.read(size)
+
+      Frame.from_id(id).new(id, version, sf, ff, body)
     end
 
     @[Flags]
@@ -86,9 +96,8 @@ module Id3::V2
     end
 
     getter id : String
-    getter format_flags : FormatFlags | OldFormatFlags | Nil
     getter status_flags : StatusFlags | OldStatusFlags | Nil
-    getter raw_flags : Bytes?
+    getter format_flags : FormatFlags | OldFormatFlags | Nil
     getter extra_flag_bytes : Int32
     getter body : Bytes
 
@@ -96,23 +105,12 @@ module Id3::V2
     getter group : UInt8?
     getter compression_size : Int32?
 
-    def_equals_and_hash id, raw_flags, body
+    def_equals_and_hash id, status_flags, format_flags, body
 
-    def initialize(@id, version : Version, @raw_flags, @body)
+    def initialize(@id, version : Version, @status_flags, @format_flags, @body)
       @extra_flag_bytes = 0
 
-      if rf = @raw_flags
-        if version.major == 2
-          ff = OldFormatFlags.from_value(rf[0].to_i)
-          sf = OldStatusFlags.from_value(rf[1].to_i)
-        else
-          ff = FormatFlags.from_value(rf[0].to_i)
-          sf = StatusFlags.from_value(rf[1].to_i)
-        end
-
-        @format_flags = ff
-        @status_flags = sf
-
+      if ff = @format_flags
         efb = 0
 
         if ff.grouped?
@@ -145,24 +143,6 @@ module Id3::V2
       # @content = String.new(decoded_content)
     end
 
-    # def extra_bytes
-    #   if f = @format_flags
-    #     bytes = 0
-
-    #     f.each do |flag|
-    #       bytes += case flag
-    #                in .grouped?    then 1
-    #                in .compressed? then 4
-    #                in .encryped?   then 1
-    #                end
-    #     end
-
-    #     bytes
-    #   else
-    #     0
-    #   end
-    # end
-
     # def content
     #   # raw_content_io.seek(flags.additional_info_byte_count)
     #   # if flags.unsynchronised?
@@ -171,18 +151,6 @@ module Id3::V2
     #   #   raw_content_io.read
     #   # end
     #   ""
-    # end
-
-    # def group_id
-    #   if flags.grouped?
-    #     read_additional_info_byte(*flags.position_and_count_of_group_id_bytes)
-    #   end
-    # end
-
-    # def encryption_id
-    #   if flags.encrypted?
-    #     read_additional_info_byte(*flags.position_and_count_of_encryption_id_bytes)
-    #   end
     # end
 
     # def final_size
