@@ -1,6 +1,6 @@
 name: id3
 version: 0.1.0
-crystal: 1.7.
+crystal: 1.6.1
 license: MIT
 
 authors:
@@ -10,6 +10,9 @@ authors:
 development_dependencies:
   microtest:
     github: ragmaanir/microtest
+    branch: master
+  kommando:
+    github: ragmaanir/kommando
     branch: master
   ameba:
     github: veelenga/ameba

@@ -6,6 +6,9 @@ require "./id3/v1"
 require "./id3/v2"
 
 module Id3
+  ROOT    = Path.new(__DIR__).parent
+  VERSION = {{ `shards version #{__DIR__}`.strip.stringify }}
+
   Log = ::Log.for(self)
 
   class ValidationException < Exception
