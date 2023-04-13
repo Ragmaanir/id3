@@ -1,14 +1,25 @@
+require "log"
+
 require "./synchsafe_int"
 require "./reader"
 require "./id3/v1"
 require "./id3/v2"
 
 module Id3
+  Log = ::Log.for(self)
+
+  class ValidationException < Exception
+  end
+
   NULL_BYTE = 0_u8
 
   class TaggedFile
+    def self.read(p : Path)
+      read(Reader.new(File.new(p)))
+    end
+
     def self.read(f : File)
-      Reader.new(f)
+      read(Reader.new(f))
     end
 
     def self.read(r : Reader)
@@ -43,7 +54,7 @@ module Id3
   #
   #   `11111111 00000000 111xxxxx`
   #
-  # to prevent old software/players as interpreting
+  # in order to prevent old software/players from interpreting
   # the sequence as an incorrect synchronization sequence.
   # In addition, now the sequence `FF 00` has to be escaped
   # by inserting a null byte: `FF 00 00`.

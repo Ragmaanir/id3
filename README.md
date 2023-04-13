@@ -18,7 +18,29 @@ ID3 reader library written in pure crystal.
 
 ```crystal
 require "id3"
+
+t = Id3::TaggedFile.read(Path["file.mp3"])
+
+assert t.title == "The Title Of This Dummy File"
+assert t.artist == "Another Artist"
+assert t.album == "Trees in the Forest"
+assert t.track == "1"
+assert t.year == "2023"
+assert t.genre == "Black Metal"
+
+
+v2 = t.v2.not_nil!
+
+v2.frames # access frames of v2
+v2.first("TLEN").as(Id3::V2::TextFrame).content # content of first TLEN frame
 ```
+
+## Features
+
+- 🟢 Read basic v1 and v2 tag information (title, artist, album, track, year, genre)
+- 🟢 Read unsynchronized frames
+- 🟡 Parse compressed/encrypted frames
+- 🟡 Parse extended header
 
 ## Contributing
 

@@ -22,4 +22,19 @@ describe Id3::V1 do
     assert tag.year == "2023"
     assert tag.genre == Genre::BlackMetal
   end
+
+  test "when fields empty" do
+    r = Id3::Reader.new(File.new("./spec/v1_missing.mp3"))
+    data = V1.read(r)
+
+    tag = data.as(Tag)
+
+    assert tag.title == nil
+    assert tag.artist == nil
+    assert tag.album == nil
+    assert tag.year == nil
+    assert tag.comment == nil
+    assert tag.track == "1"
+    assert tag.genre == nil
+  end
 end

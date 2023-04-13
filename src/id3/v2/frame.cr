@@ -1,8 +1,14 @@
 module Id3::V2
   class Frame
+    Log = ::Log.for(self)
+
+    def self.valid_id?(id : String)
+      /\A[A-Z0-9]{4}\z/ === id
+    end
+
     def self.from_id(id : String)
       case id
-      when /^T/
+      when /\AT/
         TextFrame
       else
         Frame
@@ -10,6 +16,8 @@ module Id3::V2
     end
 
     def self.read_all(r : Reader, version : Version)
+      Log.trace { "read_all" }
+
       frames = [] of Frame
 
       loop do
@@ -19,15 +27,23 @@ module Id3::V2
         break if b == nil || b == 0 # eof or padding
       end
 
+      Log.trace { "read_all completed (#{frames.size} Frames)" }
+
       frames
     end
 
     def self.read(r : IO, version : Version)
+      Log.trace &.emit("read", at: r.pos)
+
       major = version.major
 
       frame_id_length = major <= 2 ? 3 : 4
 
       id = r.read_string(frame_id_length)
+
+      Log.trace &.emit("id", id: id)
+
+      raise ValidationException.new("Frame id is invalid: #{id}") if !valid_id?(id)
 
       size = case major
              when 4
@@ -41,6 +57,10 @@ module Id3::V2
              else raise("Invalid major version: #{major}")
              end
 
+      # FIXME: validate size
+
+      Log.trace &.emit("size", size: size)
+
       flags = nil
 
       if major > 2 # has flags
@@ -48,10 +68,14 @@ module Id3::V2
 
         e = major == 2 ? OldFlags : NewFlags
 
+        Log.trace &.emit("flag bytes", status: flag_bytes[0].to_i, format: flag_bytes[1].to_i)
+
         flags = e.new(flag_bytes[0], flag_bytes[1])
       end
 
       body = r.read(size)
+
+      Log.trace &.emit("read completed")
 
       Frame.from_id(id).new(id, version, flags, body)
     end
@@ -61,12 +85,28 @@ module Id3::V2
         @status = StatusFlags.from_value(s)
         @format = FormatFlags.from_value(f)
       end
+
+      def inspect(io)
+        io << "NewFlags("
+        status.to_s(io)
+        io << ", "
+        format.to_s(io)
+        io << ")"
+      end
     end
 
     record(OldFlags, status : OldStatusFlags, format : OldFormatFlags) do
       def initialize(s : UInt8, f : UInt8)
         @status = OldStatusFlags.from_value(s)
         @format = OldFormatFlags.from_value(f)
+      end
+
+      def inspect(io)
+        io << "NewFlags("
+        status.to_s(io)
+        io << ", "
+        format.to_s(io)
+        io << ")"
       end
     end
 
@@ -113,71 +153,50 @@ module Id3::V2
 
     def_equals_and_hash id, flags, body
 
-    def initialize(@id, version : Version, @flags, @body)
+    def initialize(@id, version : Version, @flags, raw_body)
       @extra_flag_bytes = 0
+
+      final_body = raw_body
 
       if f = @flags
         efb = 0
 
         if f.format.grouped?
-          @encryption = @body[efb]
+          @encryption = raw_body[efb]
           efb += 1
         end
 
         if f.format.compressed?
-          @compression_size = IO::ByteFormat::BigEndian.decode(Int32, @body[efb..efb + 4])
+          @compression_size = IO::ByteFormat::BigEndian.decode(Int32, raw_body[efb..efb + 4])
           efb += 4
         end
 
         if f.format.encrypted?
-          @encryption = @body[efb]
+          @encryption = raw_body[efb]
           efb += 1
         end
 
         @extra_flag_bytes = efb
+
+        if f.format.unsynchronized?
+          final_body = UnsynchronizationScheme.unapply(raw_body[@extra_flag_bytes..-1])
+        end
       end
+
+      @body = final_body
 
       # TODO: decompression/decryption
       # TODO: lazy decompression etc?
-
-      # decoded_content = if format_flags.unsynchronized?
-      #                     UnsynchronizationScheme.unapply(@body[@extra_flag_bytes..-1])
-      #                   else
-      #                     body
-      #                   end
-
-      # @content = String.new(decoded_content)
     end
 
-    # def content
-    #   # raw_content_io.seek(flags.additional_info_byte_count)
-    #   # if flags.unsynchronised?
-    #   #   StringUtil.undo_unsynchronization(raw_content_io.read)
-    #   # else
-    #   #   raw_content_io.read
-    #   # end
-    #   ""
-    # end
-
-    # def final_size
-    #   pos, count = flags.position_and_count_of_data_length_bytes
-    #   if (flags.compressed? || flags.data_length_indicator?) && pos && count
-    #     raw_content_io.seek(pos)
-    #     SynchsafeInt.decode(NumberUtil.convert_string_to_32bit_integer(raw_content_io.read(count)))
-    #   else
-    #     raw_content_io.size
-    #   end
-    # end
-
-    # def inspect(io)
-    #   io << "Frame("
-    #   io << id
-    #   io << ", "
-    #   io << raw_flags
-    #   io << ", "
-    #   io << raw_content
-    #   # io << content
-    #   io << ")"
-    # end
+    def inspect(io)
+      io << "Frame("
+      io << id
+      io << ", "
+      flags.inspect(io)
+      # io << ", "
+      # io << body
+      io << ")"
+    end
   end
 end

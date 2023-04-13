@@ -26,32 +26,30 @@ module Id3::V2
       super(id, version, flags, io.to_slice)
     end
 
-    def initialize(id, version, flags, body)
-      @encoding = Encoding.from_value(body[0])
+    def initialize(id, version, flags, raw_body)
+      super(id, version, flags, raw_body)
 
-      string = String.new(body[1..-1], @encoding.to_s)
+      @encoding = Encoding.from_value(@body[0])
+
+      string = String.new(@body[1..-1], @encoding.to_s)
 
       @content = if version.major >= 4
                    string.chomp('\0')
                  else
                    string.split('\0', 2).first
                  end
-
-      super(id, version, flags, body)
     end
 
-    # def inspect(io)
-    #   io << "TextFrame("
-    #   io << id
-    #   io << ", "
-    #   io << raw_flags
-    #   io << ", "
-    #   io << encoding
-    #   io << ", "
-    #   io << @raw_content
-    #   io << ", "
-    #   io << content
-    #   io << ")"
-    # end
+    def inspect(io)
+      io << "TextFrame("
+      io << id
+      io << ", "
+      flags.inspect(io)
+      io << ", "
+      encoding.inspect(io)
+      io << ", "
+      content.inspect(io)
+      io << ")"
+    end
   end
 end

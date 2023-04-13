@@ -1,5 +1,5 @@
 class Id3::Reader < IO
-  @io : IO
+  getter io : IO
   getter size : Int64
 
   def initialize(@io, @size)
@@ -13,7 +13,7 @@ class Id3::Reader < IO
     initialize(IO::Memory.new(bytes, false), bytes.size)
   end
 
-  delegate read, read_string, seek, peek, to: @io
+  delegate read, read_string, seek, peek, pos, to: @io
 
   def write(slice : Bytes) : Nil
     raise "readonly"
@@ -50,5 +50,9 @@ class Id3::Reader < IO
     str = read_string(n)
     @io.seek(old)
     str
+  end
+
+  def move(n : Int32)
+    seek(n, IO::Seek::Current)
   end
 end

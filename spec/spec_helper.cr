@@ -1,6 +1,10 @@
 require "microtest"
 require "../src/id3"
 
+# require "taglib"
+
+# Log.setup(:trace)
+
 include Microtest::DSL
 
 def v1_file

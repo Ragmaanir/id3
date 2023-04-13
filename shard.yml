@@ -14,4 +14,5 @@ development_dependencies:
   ameba:
     github: veelenga/ameba
     version: 1.4.0
-
+  # taglib:
+  #   github: nilsding/taglib.cr

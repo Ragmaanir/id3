@@ -1,21 +1,33 @@
 module Id3::V2
   class Header
+    Log = ::Log.for(self)
+
     SIZE = 10
 
     def self.read(r : Reader)
-      bytes = Bytes.new(SIZE)
-      r.read(bytes)
-      parse(bytes)
+      header_bytes = r.read(SIZE)
+      read(header_bytes)
     end
 
-    def self.parse(header : Bytes)
+    def self.read(header : Bytes)
+      Log.trace &.emit("read")
+
       major = header[3]
       minor = header[4]
       version = Version.new(major, minor)
-      flags = header[5]
+
+      Log.trace &.emit("version", major: major.to_i, minor: minor.to_i)
+
+      raw_flags = header[5]
+      flags = Flags.from_value(raw_flags.to_i)
+
+      Log.trace &.emit("flags", flags: flags.inspect)
+
       tag_size = SynchsafeInt.decode(IO::ByteFormat::BigEndian.decode(Int32, header[6..9]))
 
-      new(version, Flags.from_value(flags.to_i), tag_size)
+      Log.trace &.emit("read completed", major: major.to_i, minor: minor.to_i, size: tag_size)
+
+      new(version, flags, tag_size)
     end
 
     @[Flags]
@@ -35,12 +47,14 @@ module Id3::V2
     def initialize(@version, @flags, @tag_size)
     end
 
-    # def to_s(io)
-    #   io << version
-    #   io << " "
-    #   flags.inspect(io)
-    #   io << " "
-    #   io << tag_size
-    # end
+    def inspect(io)
+      io << "Header("
+      io << version
+      io << ","
+      flags.to_s(io)
+      io << ","
+      io << tag_size
+      io << ")"
+    end
   end
 end

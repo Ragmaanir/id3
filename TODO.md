@@ -1,7 +1,9 @@
 TODO
 ----
 
-- 🟡 Should TaggedFile shortcut genre return string or the V1 genre enum?
+- 🟡❓ Should TaggedFile shortcut genre return string or the V1 genre enum?
+- 🟡🔒 Security: Validate sizes
+- 🟡 Add more test files
 
 - 🟣 V2
   - 🟢 Read header
@@ -17,6 +19,7 @@ TODO
     - 🟡 raw_content / content
   - 🟡 Read common frames
     - 🟡 TCON with special encoding of id3v1 genres etc
+  - 🟢 Logging
 
 - 🟣 V1
   - 🟢 Read title/artist etc
