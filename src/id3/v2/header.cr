@@ -21,7 +21,7 @@ module Id3::V2
       raw_flags = header[5]
       flags = Flags.from_value(raw_flags.to_i)
 
-      Log.trace &.emit("flags", flags: flags.inspect)
+      Log.trace &.emit("flags", flags: flags.to_s)
 
       tag_size = SynchsafeInt.decode(IO::ByteFormat::BigEndian.decode(Int32, header[6..9]))
 

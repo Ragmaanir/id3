@@ -9,12 +9,16 @@ module Id3
   ROOT    = Path.new(__DIR__).parent
   VERSION = {{ `shards version #{__DIR__}`.strip.stringify }}
 
+  NULL_BYTE = 0_u8
+
   Log = ::Log.for(self)
+
+  def self.bug!(msg : String = "An internal error occurred, please report!")
+    raise "BUG: #{msg}"
+  end
 
   class ValidationException < Exception
   end
-
-  NULL_BYTE = 0_u8
 
   class TaggedFile
     def self.read(p : Path)

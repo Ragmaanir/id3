@@ -2,12 +2,15 @@ TODO
 ----
 
 - 🟡❓ Should TaggedFile shortcut genre return string or the V1 genre enum?
-- 🟡🔒 Security: Validate sizes
+- 🟡🔒 Security: Validate sizes (configurable): max for tag is 256MB, max for frame is 16MB
 - 🟡 Add more test files
 
 - 🟣 V2
   - 🟢 Read header
   - 🟢 Read text frames
+  - 🟡 Validate 3 character frame ids for 2.2
+  - 🟡 Better exceptions that show at which step or which frame an error occurred
+  - 🟡 Strict and graceful mode: stop reading frames when there is an error, but dont raise
   - 🟡 Specs for 2.2/2.3
   - 🟡 Unicode
     - 🟡 Unicode strings must begin with the Unicode BOM

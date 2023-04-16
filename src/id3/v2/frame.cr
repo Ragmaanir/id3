@@ -3,7 +3,7 @@ module Id3::V2
     Log = ::Log.for(self)
 
     def self.valid_id?(id : String)
-      /\A[A-Z0-9]{4}\z/ === id
+      /\A[A-Z0-9]{3,4}\z/ === id
     end
 
     def self.from_id(id : String)
@@ -15,13 +15,13 @@ module Id3::V2
       end
     end
 
-    def self.read_all(r : Reader, version : Version)
+    def self.read_all(r : Reader, header : Header)
       Log.trace { "read_all" }
 
       frames = [] of Frame
 
       loop do
-        frames << Frame.read(r, version)
+        frames << Frame.read(r, header.version)
 
         b = r.peek_byte
         break if b == nil || b == 0 # eof or padding
@@ -32,7 +32,24 @@ module Id3::V2
       frames
     end
 
-    def self.read(r : IO, version : Version)
+    # def self.read_all(r : Reader, frames_end_pos : Int64, header : Header)
+    #   Log.trace { "read_all" }
+
+    #   frames = [] of Frame
+
+    #   loop do
+    #     frames << Frame.read(r, header.version)
+
+    #     break if r.pos >= frames_end_pos
+    #     break if r.peek_byte == 0 # padding
+    #   end
+
+    #   Log.trace { "read_all completed (#{frames.size} Frames)" }
+
+    #   frames
+    # end
+
+    def self.read(r : Reader, version : Version)
       Log.trace &.emit("read", at: r.pos)
 
       major = version.major
@@ -43,7 +60,9 @@ module Id3::V2
 
       Log.trace &.emit("id", id: id)
 
-      raise ValidationException.new("Frame id is invalid: #{id}") if !valid_id?(id)
+      if !valid_id?(id)
+        raise ValidationException.new("Frame id is invalid: #{id}")
+      end
 
       size = case major
              when 4
@@ -52,9 +71,9 @@ module Id3::V2
                r.read_int32
              when 2
                bytes = Bytes[0x0, 0x0, 0x0, 0x0]
-               r.read(bytes[1, 3]) == 3 || raise("Unexpected EOF")
+               r.read_fully(bytes[1, 3]) == 3 || raise("Unexpected EOF")
                IO::ByteFormat::BigEndian.decode(Int32, bytes)
-             else raise("Invalid major version: #{major}")
+             else Id3.bug!("An invalid major version number should not be detected here: #{major}")
              end
 
       # FIXME: validate size
@@ -68,7 +87,7 @@ module Id3::V2
 
         e = major == 2 ? OldFlags : NewFlags
 
-        Log.trace &.emit("flag bytes", status: flag_bytes[0].to_i, format: flag_bytes[1].to_i)
+        Log.trace &.emit("flag bytes", kind: e.name.split("::").last, status: flag_bytes[0].to_i, format: flag_bytes[1].to_i)
 
         flags = e.new(flag_bytes[0], flag_bytes[1])
       end
@@ -174,6 +193,10 @@ module Id3::V2
         if f.format.encrypted?
           @encryption = raw_body[efb]
           efb += 1
+        end
+
+        if f.format.data_length_indicator?
+          efb += 4
         end
 
         @extra_flag_bytes = efb

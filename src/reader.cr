@@ -1,4 +1,4 @@
-class Id3::Reader < IO
+class Id3::Reader
   getter io : IO
   getter size : Int64
 
@@ -13,15 +13,12 @@ class Id3::Reader < IO
     initialize(IO::Memory.new(bytes, false), bytes.size)
   end
 
-  delegate read, read_string, seek, peek, pos, to: @io
-
-  def write(slice : Bytes) : Nil
-    raise "readonly"
-  end
+  delegate read_fully, read_bytes, read_string, seek, pos, to: @io
 
   def read(n : Int32)
     s = Bytes.new(n)
-    @io.read(s) == n || raise("Unexpected EOF")
+    # NOTE: IO.read(Bytes) only reads up to 32758, IO.read_fully(Bytes) reads all
+    @io.read_fully(s)
     s
   end
 
@@ -30,25 +27,20 @@ class Id3::Reader < IO
   end
 
   def peek_byte : UInt8?
-    case bytes = peek
-    when nil     then raise("IO does not support peek")
-    when .empty? then nil # eof
-    else
-      bytes[0]
-    end
+    b = io.read_byte
+    move(-1) if b
+    b
   end
 
   def peek(n : Int32) : Bytes
-    old = @io.pos
     bytes = read(n)
-    @io.seek(pos)
+    move(-n)
     bytes
   end
 
   def peek_string(n : Int32) : String
-    old = @io.pos
     str = read_string(n)
-    @io.seek(old)
+    move(-n)
     str
   end
 

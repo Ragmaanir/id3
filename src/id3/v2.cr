@@ -7,6 +7,10 @@ module Id3::V2
   IDENTIFIER = "ID3"
 
   record(Version, major : UInt8, minor : UInt8) do
+    def initialize(@major, @minor)
+      raise "Invalid major version: #{major}" unless major.in?(2, 3, 4)
+    end
+
     def inspect(io)
       io << "Version("
       io << major
@@ -28,39 +32,55 @@ module Id3::V2
     Log.trace &.emit("read", at: r.pos)
 
     header = Header.read(r)
-    ext_size = read_extended_header_size(r, header)
 
-    # skip over extended header
-    r.move(ext_size)
+    # SPEC 2.3: The tag size is the size of the complete tag after
+    # unsychronisation, including padding, excluding the header but
+    # not excluding the extended header (total tag size - 10)
 
-    remaining = header.tag_size - ext_size
+    # # SPEC 2.4:
+    # # The ID3v2 tag size is the sum of the byte length of the extended
+    # # header, the padding and the frames after unsynchronisation.
+    # frames_end_pos = r.pos.to_i64 + (header.tag_size - ext_size)
+    # frames = Frame.read_all(r, frames_end_pos, header)
 
-    body = r.read(remaining)
-    body = UnsynchronizationScheme.unapply(body) if header.flags.unsynchronization?
-    frames = Frame.read_all(Reader.new(body), header.version)
+    # https://hydrogenaud.io/index.php/topic,71966.0.html
+
+    body = r.read(header.tag_size)
+
+    if header.version.major < 4 && header.flags.unsynchronization?
+      body = UnsynchronizationScheme.unapply(body)
+    end
+
+    rr = Reader.new(body)
+
+    if header.flags.extended_header?
+      ext_size = peek_extended_header_size(rr, header)
+
+      # skip over extended header
+      rr.move(ext_size)
+    end
+
+    frames = Frame.read_all(rr, header)
 
     Log.trace &.emit("read completed", frames: frames.size)
 
     Tag.new(header, frames)
   end
 
-  def self.read_extended_header_size(r : Reader, header : Header)
-    if header.flags.extended_header?
-      size = r.read_int32
+  def self.peek_extended_header_size(r : Reader, header : Header)
+    size = r.read_int32
+    r.move(-4)
 
-      ext_size = if header.version.major == 3
-                   # 2.3.0: size does not include size field itself, so we add it
-                   size + 4
-                 else
-                   SynchsafeInt.decode(size)
-                 end
+    ext_size = if header.version.major == 3
+                 # 2.3.0: size does not include size field itself, so we add it
+                 size + 4
+               else
+                 SynchsafeInt.decode(size)
+               end
 
-      Log.trace &.emit("extended header size", size: ext_size)
+    Log.trace &.emit("extended header size", size: ext_size)
 
-      ext_size
-    else
-      0
-    end
+    ext_size
   end
 
   class Tag
