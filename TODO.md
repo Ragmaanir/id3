@@ -8,6 +8,9 @@ TODO
 - 🟣 V2
   - 🟢 Read header
   - 🟢 Read text frames
+  - 🟢 Cli command to print info and frames of a file
+  - 🟢 Logging
+  - 🟡 Eager load most common frames, lazily load uncommon frames and frames with a lot of data
   - 🟡 Validate 3 character frame ids for 2.2
   - 🟡 Better exceptions that show at which step or which frame an error occurred
   - 🟡 Strict and graceful mode: stop reading frames when there is an error, but dont raise
@@ -22,7 +25,6 @@ TODO
     - 🟡 raw_content / content
   - 🟡 Read common frames
     - 🟡 TCON with special encoding of id3v1 genres etc
-  - 🟢 Logging
 
 - 🟣 V1
   - 🟢 Read title/artist etc

@@ -96,7 +96,7 @@ module Id3::V2
 
       Log.trace &.emit("read completed")
 
-      Frame.from_id(id).new(id, version, flags, body)
+      Frame.from_id(id).new(id, version, size, flags, body)
     end
 
     record(NewFlags, status : StatusFlags, format : FormatFlags) do
@@ -162,6 +162,7 @@ module Id3::V2
     end
 
     getter id : String
+    getter size : Int32
     getter flags : NewFlags | OldFlags | Nil
     getter extra_flag_bytes : Int32
     getter body : Bytes
@@ -170,9 +171,9 @@ module Id3::V2
     getter group : UInt8?
     getter compression_size : Int32?
 
-    def_equals_and_hash id, flags, body
+    def_equals_and_hash id, size, flags, body
 
-    def initialize(@id, version : Version, @flags, raw_body)
+    def initialize(@id, version : Version, @size, @flags, raw_body)
       @extra_flag_bytes = 0
 
       final_body = raw_body
@@ -215,6 +216,8 @@ module Id3::V2
     def inspect(io)
       io << "Frame("
       io << id
+      io << ", "
+      io << size
       io << ", "
       flags.inspect(io)
       # io << ", "

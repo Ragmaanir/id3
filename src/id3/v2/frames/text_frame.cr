@@ -14,20 +14,20 @@ module Id3::V2
     getter encoding : Encoding
     getter content : String
 
-    def_equals_and_hash id, flags, body, encoding, content
+    def_equals_and_hash id, size, flags, body, encoding, content
 
-    def initialize(id, version, flags, @encoding, @content)
+    def initialize(id, version, size, flags, @encoding, @content)
       io = IO::Memory.new
 
       io.write_byte(encoding.value)
 
       io.write(content.to_slice)
 
-      super(id, version, flags, io.to_slice)
+      super(id, version, size, flags, io.to_slice)
     end
 
-    def initialize(id, version, flags, raw_body)
-      super(id, version, flags, raw_body)
+    def initialize(id, version, size, flags, raw_body)
+      super(id, version, size, flags, raw_body)
 
       @encoding = Encoding.from_value(@body[0])
 
@@ -43,6 +43,8 @@ module Id3::V2
     def inspect(io)
       io << "TextFrame("
       io << id
+      io << ", "
+      io << size
       io << ", "
       flags.inspect(io)
       io << ", "

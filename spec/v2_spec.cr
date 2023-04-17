@@ -27,13 +27,13 @@ describe Id3::V2 do
     flags = Frame::NewFlags.new(:none, :none)
 
     frames = [
-      TextFrame.new("TIT2", v, flags, :ISO8859_1, "The Title Of This Dummy File"),
-      TextFrame.new("TPE1", v, flags, :ISO8859_1, "Another Artist"),
-      TextFrame.new("TALB", v, flags, :ISO8859_1, "Trees in the Forest"),
-      Frame.new("COMM", v, flags, "\u0000eng\u0000The Comment".to_slice),
-      TextFrame.new("TRCK", v, flags, :ISO8859_1, "1"),
-      TextFrame.new("TYER", v, flags, :ISO8859_1, "2023"),
-      TextFrame.new("TCON", v, flags, :ISO8859_1, "Black Metal"),
+      TextFrame.new("TIT2", v, 29, flags, :ISO8859_1, "The Title Of This Dummy File"),
+      TextFrame.new("TPE1", v, 15, flags, :ISO8859_1, "Another Artist"),
+      TextFrame.new("TALB", v, 20, flags, :ISO8859_1, "Trees in the Forest"),
+      Frame.new("COMM", v, 16, flags, "\u0000eng\u0000The Comment".to_slice),
+      TextFrame.new("TRCK", v, 2, flags, :ISO8859_1, "1"),
+      TextFrame.new("TYER", v, 5, flags, :ISO8859_1, "2023"),
+      TextFrame.new("TCON", v, 12, flags, :ISO8859_1, "Black Metal"),
     ]
 
     assert tag.frames == frames

@@ -3,7 +3,7 @@ require "../src/id3"
 
 # require "taglib"
 
-Log.setup(:trace)
+# Log.setup(:trace)
 
 include Microtest::DSL
 

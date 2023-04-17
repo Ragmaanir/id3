@@ -1,6 +1,6 @@
 # Id3 [![Crystal CI](https://github.com/Ragmaanir/id3/actions/workflows/crystal.yml/badge.svg)](https://github.com/Ragmaanir/id3/actions/workflows/crystal.yml)
 
-### Version 0.1.0
+### Version 0.1.1
 
 ID3 reader library written in pure crystal.
 
@@ -33,6 +33,13 @@ assert t.genre == "Black Metal"
 
 v2 = t.v2.not_nil!
 
+assert v2.title == "The Title Of This Dummy File"
+assert v2.artist == "Another Artist"
+assert v2.album == "Trees in the Forest"
+assert v2.track == "1"
+assert v2.year == "2023"
+assert v2.genre == "Black Metal"
+
 v2.frames # access frames of v2
 v2.first("TLEN").as(Id3::V2::TextFrame).content # content of first TLEN frame
 ```
@@ -51,6 +58,8 @@ v2.first("TLEN").as(Id3::V2::TextFrame).content # content of first TLEN frame
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new Pull Request
+
+When changing the `README.md`, change `README.md.ecr` instead and run `./cli readme` to generate `README.md`.
 
 ## Contributors
 

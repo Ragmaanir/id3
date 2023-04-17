@@ -60,5 +60,18 @@ module Id3::V1
 
     def initialize(@version, @title, @artist, @album, @year, @comment, @track, @genre)
     end
+
+    def to_tuple
+      {
+        version: version,
+        title:   title,
+        artist:  artist,
+        album:   album,
+        year:    year,
+        comment: comment,
+        track:   track,
+        genre:   genre,
+      }
+    end
   end
 end
