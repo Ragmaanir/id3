@@ -20,36 +20,30 @@ ID3 reader library written in pure crystal.
 
 ```crystal
 require "id3"
-
-t = Id3::TaggedFile.read(Path["file.mp3"])
-
-assert t.title == "The Title Of This Dummy File"
-assert t.artist == "Another Artist"
-assert t.album == "Trees in the Forest"
-assert t.track == "1"
-assert t.year == "2023"
-assert t.genre == "Black Metal"
-
-
-v2 = t.v2.not_nil!
-
-assert v2.title == "The Title Of This Dummy File"
-assert v2.artist == "Another Artist"
-assert v2.album == "Trees in the Forest"
-assert v2.track == "1"
-assert v2.year == "2023"
-assert v2.genre == "Black Metal"
-
-v2.frames # access frames of v2
-v2.first("TLEN").as(Id3::V2::TextFrame).content # content of first TLEN frame
 ```
+
+```crystal
+<%= File.read("spec/readme/mp3_example.cr") %>
+```
+
+```crystal
+<%= File.read("spec/readme/tagged_file_example.cr") %>
+```
+
 
 ## Features
 
 - 🟢 Read basic v1 and v2 tag information (title, artist, album, track, year, genre)
 - 🟢 Read unsynchronized frames
-- 🟡 Parse compressed/encrypted frames
-- 🟡 Parse extended header
+- 🟢 Calculate mp3 length using Xing header or by counting the frames in the file
+
+Use `./cli` for these tasks:
+
+```bash
+./cli
+
+<%= `./cli` %>
+```
 
 ## Contributing
 

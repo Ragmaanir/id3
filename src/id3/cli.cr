@@ -1,6 +1,7 @@
 require "../id3"
 require "./cli/readme"
 require "./cli/inspect"
+require "./cli/frames"
 
 # require "./cli/release"
 
@@ -10,6 +11,7 @@ module Id3
       root = Kommando::Namespace.root do
         command Readme
         command Inspect
+        command Frames
         # command Release
       end
 

@@ -1,4 +1,11 @@
+require "./encoding"
+require "./flags"
+
 module Id3::V2
+  module FrameWithContent
+    abstract def content : String
+  end
+
   class Frame
     Log = ::Log.for(self)
 
@@ -8,8 +15,12 @@ module Id3::V2
 
     def self.from_id(id : String)
       case id
+      when /\ATXXX/
+        UserDefinedTextFrame
       when /\AT/
         TextFrame
+      when /\ACOMM/
+        CommentFrame
       else
         Frame
       end
@@ -99,68 +110,6 @@ module Id3::V2
       Frame.from_id(id).new(id, version, size, flags, body)
     end
 
-    record(NewFlags, status : StatusFlags, format : FormatFlags) do
-      def initialize(s : UInt8, f : UInt8)
-        @status = StatusFlags.from_value(s)
-        @format = FormatFlags.from_value(f)
-      end
-
-      def inspect(io)
-        io << "NewFlags("
-        status.to_s(io)
-        io << ", "
-        format.to_s(io)
-        io << ")"
-      end
-    end
-
-    record(OldFlags, status : OldStatusFlags, format : OldFormatFlags) do
-      def initialize(s : UInt8, f : UInt8)
-        @status = OldStatusFlags.from_value(s)
-        @format = OldFormatFlags.from_value(f)
-      end
-
-      def inspect(io)
-        io << "NewFlags("
-        status.to_s(io)
-        io << ", "
-        format.to_s(io)
-        io << ")"
-      end
-    end
-
-    @[Flags]
-    enum StatusFlags : UInt8
-      DiscardOnTagAlt  = 0b0100_0000
-      DiscardOnFileAlt = 0b0010_0000
-      Readonly         = 0b0001_0000
-    end
-
-    @[Flags]
-    enum FormatFlags : UInt8
-      Grouped             = 0b0100_0000
-      Compressed          = 0b0000_1000
-      Encrypted           = 0b0000_0100
-      Unsynchronized      = 0b0000_0010
-      DataLengthIndicator = 0b0000_0001
-    end
-
-    @[Flags]
-    enum OldStatusFlags : UInt8
-      DiscardOnTagAlt  = 0b0100_0000
-      DiscardOnFileAlt = 0b0010_0000
-      Readonly         = 0b0001_0000
-    end
-
-    @[Flags]
-    enum OldFormatFlags : UInt8
-      Grouped             = 0b0100_0000
-      Compressed          = 0b0000_1000
-      Encrypted           = 0b0000_0100
-      Unsynchronized      = 0b0000_0010
-      DataLengthIndicator = 0b0000_0001
-    end
-
     getter id : String
     getter size : Int32
     getter flags : NewFlags | OldFlags | Nil
@@ -208,21 +157,31 @@ module Id3::V2
       end
 
       @body = final_body
-
-      # TODO: decompression/decryption
-      # TODO: lazy decompression etc?
     end
 
-    def inspect(io)
-      io << "Frame("
-      io << id
-      io << ", "
-      io << size
-      io << ", "
-      flags.inspect(io)
-      # io << ", "
-      # io << body
-      io << ")"
+    private def class_name
+      self.class.name.split("::").last
+    end
+
+    def pretty_print(pp : PrettyPrint)
+      pp.text class_name.colorize(:cyan)
+
+      pp.text "("
+      pp.text id.colorize(:green)
+      pp.text ", "
+      pp.text size
+      pp.text ", "
+      flags.pretty_print(pp)
+
+      extra_attributes.each do |att|
+        pp.text ", "
+        pp.text att
+      end
+      pp.text ")"
+    end
+
+    private def extra_attributes
+      [] of String
     end
   end
 end

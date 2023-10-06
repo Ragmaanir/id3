@@ -86,8 +86,31 @@ module Id3::V2
   class Tag
     getter header : Header
     getter frames : Array(Frame)
+    delegate end_pos, to: @header
 
     def initialize(@header, @frames)
+    end
+
+    def size
+      header.tag_size
+    end
+
+    def basics?
+      title = false
+      artist = false
+
+      @frames.each { |f|
+        if t = f.as?(TextFrame)
+          case t.id
+          when "TIT2"
+            title ||= t.content.blank?
+          when "TPE1"
+            artist ||= t.content.blank?
+          end
+        end
+      }
+
+      artist && title
     end
 
     def first?(id : String) : Frame?
@@ -109,6 +132,7 @@ module Id3::V2
       "TRCK" => :track,
       "TYER" => :year,
       "TCON" => :genre,
+      "COMM" => :comment,
     }
 
     {% for id, name in SHORTCUTS %}
@@ -116,16 +140,20 @@ module Id3::V2
 
       def {{name.id}}
         @__frame__{{name.id}} ||= first?({{id}})
-        @__frame__{{name.id}}.try(&.as(TextFrame).content)
+        @__frame__{{name.id}}.try(&.as(FrameWithContent).content)
       end
     {% end %}
 
-    def inspect(io)
-      io << "V2::Tag("
-      header.inspect(io)
-      io << ", "
-      frames.inspect(io)
-      io << ")"
+    def pretty_print(pp : PrettyPrint)
+      pp.text "V2::Tag".colorize(:cyan)
+      pp.text "("
+      pp.nest(2) do
+        pp.breakable
+        header.pretty_print(pp)
+        pp.comma
+        pp.list("[", @frames, "]")
+      end
+      pp.text ")"
     end
   end
 end

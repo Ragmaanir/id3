@@ -5,6 +5,10 @@ class Id3::Reader
   def initialize(@io, @size)
   end
 
+  def initialize(path : Path)
+    initialize(File.new(path))
+  end
+
   def initialize(io : File)
     initialize(io, io.size)
   end
@@ -13,7 +17,7 @@ class Id3::Reader
     initialize(IO::Memory.new(bytes, false), bytes.size)
   end
 
-  delegate read_fully, read_bytes, read_string, seek, pos, to: @io
+  delegate read_fully, read_byte, read_bytes, read_string, seek, pos, to: @io
 
   def read(n : Int32)
     s = Bytes.new(n)
@@ -24,6 +28,10 @@ class Id3::Reader
 
   def read_int32
     read_bytes(Int32, IO::ByteFormat::BigEndian)
+  end
+
+  def read_uint32
+    read_bytes(UInt32, IO::ByteFormat::BigEndian)
   end
 
   def peek_byte : UInt8?
@@ -44,7 +52,11 @@ class Id3::Reader
     str
   end
 
-  def move(n : Int32)
+  def move(n : Int32 | Int64)
     seek(n, IO::Seek::Current)
+  end
+
+  def remaining_size
+    size - pos
   end
 end

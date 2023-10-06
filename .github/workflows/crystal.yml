@@ -1,6 +1,7 @@
 name: Crystal CI
 
 on:
+  workflow_dispatch:
   push:
   pull_request:
   schedule:
@@ -12,7 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        crystal: [latest, nightly]
+        # crystal: [latest, nightly]
+        crystal: [latest] # nightly breaks too often
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -22,7 +24,7 @@ jobs:
           crystal: ${{ matrix.crystal }}
 
       - name: Download source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install shards
         run: shards install

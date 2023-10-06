@@ -1,29 +1,27 @@
 module Id3::V2
   class TextFrame < Frame
-    enum Encoding : UInt8
-      ISO8859_1 = 0b00
-      UTF_16    = 0b01
-      UTF_16BE  = 0b10
-      UTF_8     = 0b11
-
-      def to_s
-        super.sub("_", "-")
-      end
-    end
+    include FrameWithContent
 
     getter encoding : Encoding
-    getter content : String
+    getter contents : Array(String)
 
-    def_equals_and_hash id, size, flags, body, encoding, content
+    def_equals_and_hash id, size, flags, body, encoding, contents
 
-    def initialize(id, version, size, flags, @encoding, @content)
+    def self.create(id, version, size, flags, encoding : Encoding, content : String)
+      create(id, version, size, flags, encoding, [content])
+    end
+
+    def self.create(id, version, size, flags, encoding : Encoding, contents : Array(String))
       io = IO::Memory.new
 
+      io.set_encoding(encoding.to_s)
       io.write_byte(encoding.value)
 
-      io.write(content.to_slice)
+      contents.join(io, "\0") do |c, io|
+        io.write(c.to_slice)
+      end
 
-      super(id, version, size, flags, io.to_slice)
+      new(id, version, size, flags, io.to_slice)
     end
 
     def initialize(id, version, size, flags, raw_body)
@@ -31,27 +29,29 @@ module Id3::V2
 
       @encoding = Encoding.from_value(@body[0])
 
-      string = String.new(@body[1..-1], @encoding.to_s)
+      # SPEC(v2.3):
+      # If the textstring is followed by a termination ($00 (00))
+      # all the following information should be ignored and not be displayed.
+      #
+      # SPEC(v2.4):
+      # All text information frames supports multiple strings,
+      # stored as a null separated list, where null is reperesented
+      # by the termination code for the charater encoding.
 
-      @content = if version.major >= 4
-                   string.chomp('\0')
-                 else
-                   string.split('\0', 2).first
-                 end
+      rest = @body[1..-1]
+
+      @contents = encoding.read_multiple_strings(rest)
     end
 
-    def inspect(io)
-      io << "TextFrame("
-      io << id
-      io << ", "
-      io << size
-      io << ", "
-      flags.inspect(io)
-      io << ", "
-      encoding.inspect(io)
-      io << ", "
-      content.inspect(io)
-      io << ")"
+    def content : String
+      contents.first
+    end
+
+    private def extra_attributes
+      [
+        encoding.to_s,
+        contents.map(&.colorize(:yellow)),
+      ]
     end
   end
 end

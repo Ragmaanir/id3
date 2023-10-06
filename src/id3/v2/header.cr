@@ -47,14 +47,20 @@ module Id3::V2
     def initialize(@version, @flags, @tag_size)
     end
 
-    def inspect(io)
-      io << "Header("
-      io << version
-      io << ","
-      flags.to_s(io)
-      io << ","
-      io << tag_size
-      io << ")"
+    def end_pos
+      10 + @tag_size
+    end
+
+    def pretty_print(pp : PrettyPrint)
+      pp.text "Header".colorize(:cyan)
+      # pp.list("(", [version, flags.to_s, tag_size], ")")
+      pp.text "("
+      pp.text version
+      pp.text ", "
+      pp.text flags.to_s
+      pp.text ", "
+      pp.text tag_size
+      pp.text ")"
     end
   end
 end

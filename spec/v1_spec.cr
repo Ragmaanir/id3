@@ -20,6 +20,7 @@ describe Id3::V1 do
     assert tag.album == "Trees in the Forest"
     assert tag.track == "1"
     assert tag.year == "2023"
+    assert tag.comment == "The Comment"
     assert tag.genre == Genre::BlackMetal
   end
 

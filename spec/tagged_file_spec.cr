@@ -51,7 +51,10 @@ describe Id3 do
     ]
 
     assert t.all("TXXX").size == 2
-    assert t.first("TXXX").as(V2::TextFrame).content == "userTextDescription1\u0000userTextData1\u0000userTextData2"
+    udf = t.first("TXXX").as(V2::UserDefinedTextFrame)
+    assert udf.description == "userTextDescription1"
+    assert udf.value == "userTextData1"
+    # TODO: there is hidden text: "userTextDescription1\u0000userTextData1\u0000userTextData2"
   end
 
   test "unsynch" do

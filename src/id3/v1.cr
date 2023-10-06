@@ -73,5 +73,13 @@ module Id3::V1
         genre:   genre,
       }
     end
+
+    def pretty_print(pp : PrettyPrint)
+      pp.text "V1::Tag".colorize(:cyan)
+
+      pp.group(2, "(", ")") do
+        pp.text(to_tuple)
+      end
+    end
   end
 end

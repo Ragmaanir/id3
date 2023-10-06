@@ -4,6 +4,10 @@ require "kommando"
 class Id3::Cli::Inspect
   include Kommando::Command
 
+  def self.description
+    "Print ID3 metadata of a mp3 file"
+  end
+
   arg :file, String
 
   def call
@@ -43,6 +47,13 @@ class Id3::Cli::Inspect
           case f
           when V2::TextFrame
             t.w ": "
+            t.w f.content
+          when V2::CommentFrame
+            t.w ": ("
+            t.w f.language
+            t.w ") "
+            t.w f.description
+            t.w " => "
             t.w f.content
           end
 
